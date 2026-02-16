@@ -16,7 +16,7 @@ def resize_for_display(frame, max_width=900):
     return cv2.resize(frame, None, fx=scale, fy=scale)
 
 
-cap = ADBCapture()
+cap = cv2.VideoCapture("/dev/video10")
 detector = Detector()
 renderer = Render()
 controller = DetectionController(confirm_frames=3)
@@ -26,9 +26,8 @@ cv2.namedWindow("Fire Detector", cv2.WINDOW_NORMAL)
 cv2.resizeWindow("Fire Detector", 900, 600)
 
 while True:
-    frame = cap.get_frame()
-
-    if frame is None:
+    ret, frame = cap.read()
+    if not ret or frame is None:
         continue
 
     detections = detector.detect(frame)
