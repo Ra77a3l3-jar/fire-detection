@@ -21,9 +21,9 @@ class Detector:
 
         if result.boxes is None:
             return detections
+
         confidences = result.boxes.conf.cpu().numpy()
         boxes = result.boxes.xyxy.cpu().numpy()
-        confidences = result.boxes.conf.cpu().numpy()
 
         for box, confidence in zip(boxes, confidences):
             x1, y1, x2, y2 = box.astype(int)
