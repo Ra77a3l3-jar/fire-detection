@@ -1,9 +1,15 @@
+from capture.adb_capture import ADBCapture
 import cv2
-import numpy as numpy
-import subprocess
 
-process = subprocess.Popen(['adb', 'exec-out', 'screencap', '-p'], stdout=subprocess.PIPE)
-img = process.stdout.read()
-frame = cv2.imdecode(numpy.frombuffer(img, numpy.uint8), cv2.IMREAD_COLOR)
-cv2.imshow('test frame', frame)
-cv2.waitKey(0)
+cap = ADBCapture()
+
+while True:
+    frame = cap.get_frame()
+
+    if frame is None:
+        continue
+
+    cv2.imshow("test", frame)
+
+    if cv2.waitKey(1) == 27:
+        break
