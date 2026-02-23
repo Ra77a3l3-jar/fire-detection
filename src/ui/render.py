@@ -1,4 +1,5 @@
 import cv2
+from cv2.detail import PairwiseSeamFinder
 
 class Render:
     def __init__(self) -> None:
@@ -55,3 +56,37 @@ class Render:
             )
 
         return output
+
+    def draw_info(self, frame, fps, total_detections, device, fire_alert=False):
+        h, w = frame.shape[:2]
+
+        # Semi trandparent background
+        panel_heigh = 140
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (0, 0), (w, panel_heigh), self.GREY, -1)
+        cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
+
+        # Device (GPU/CPU)
+        device_text = "GPU" if device == "cuda" else "CPU"
+        device_color = self.GREEN if device == "cuda" else self.ORANGE
+        cv2.putText(
+            frame,
+            f"[{device_text}]",
+            (20, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.0,
+            device_color,
+            2,
+            cv2.LINE_AA
+        )
+
+        cv2.putText(
+            frame,
+            f"FPS{fps:.1f}",
+            (40, 110),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.5,
+            (0, 165, 255),
+            3,
+            cv2.LINE_AA
+        )
