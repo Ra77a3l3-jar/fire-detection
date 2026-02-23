@@ -80,13 +80,65 @@ class Render:
             cv2.LINE_AA
         )
 
+        # FPS counter with color range
+        fps_color = self.ORANGE if fps > 20 else (0 ,165, 255) if fps > 10 else self.ALLERT
         cv2.putText(
             frame,
-            f"FPS{fps:.1f}",
-            (40, 110),
+            f"{fps:.1f}",
+            (20, 110),
             cv2.FONT_HERSHEY_SIMPLEX,
-            1.5,
-            (0, 165, 255),
-            3,
+            2.5,
+            fps_color,
+            4,
             cv2.LINE_AA
         )
+
+        # FPS lable
+        cv2.putText(
+            frame,
+            "FPS",
+            (180, 110),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.0,
+            self.WHITE,
+            2,
+            cv2.LINE_AA
+        )
+
+        # Total detections
+        detections_text = f"Confirmed Fires: {total_detections}"
+        text_size = cv2.getTextSize(detections_text, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)[0]
+        cv2.putText(
+            frame,
+            detections_text,
+            (w - text_size[0] - 20, 70),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.9,
+            self.WHITE,
+            2,
+            cv2.LINE_AA
+        )
+
+        # Fire banner
+        if fire_alert:
+            alert_h = 80
+            alert_overlay = frame.copy()
+            cv2.rectangle(alert_overlay, (0, h - alert_h), self.ALLERT, -1)
+            cv2.addWeighted(alert_overlay, 0.6, frame, 0.4, 0, frame)
+
+            # Pulsing effect
+            text = "!!! FIRE DETECTED !!!"
+            text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)[0]
+            text_x = (w - text_size[0]) // 2
+            text_y = h - alert_h // 2 + text_size[1] // 2
+
+            cv2.putText(
+                frame,
+                text,
+                (text_x, text_y),
+                cv2.FONT_HERSHEY_DUPLEX,
+                1.5,
+                self.WHITE,
+                3,
+                cv2.LINE_AA
+            )
