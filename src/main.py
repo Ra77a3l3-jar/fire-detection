@@ -32,36 +32,25 @@ while True:
 
     detections = detector.detect(frame)
     alert = controller.process(detections)
+    
+    # Draw detections first
     frame = renderer.draw(frame, detections)
-
-    cv2.putText(
+    
+    # Draw info panel with status
+    frame = renderer.draw_info(
         frame,
-        f"FPS: {controller.fps:.1f} | Detections: {controller.total_detections}",
-        (10, 30),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.7,
-        (0, 255, 0),
-        4
+        controller.fps,
+        controller.total_detections,
+        detector.device,
+        fire_alert=alert
     )
 
     if alert:
         print("FIRE CONFIRMED")
-
         path = saver.save(frame)
         print(f"Fire captured and saved -> {path}")
 
-        cv2.putText(
-            frame,
-            "FIRE DETECTED",
-            (50, 100),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            4,
-            (0, 0, 255),
-            4
-        )
-
     display = resize_for_display(frame)
-
     cv2.imshow("Fire Detector", display)
 
     if cv2.waitKey(1) == 27:

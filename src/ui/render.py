@@ -123,7 +123,7 @@ class Render:
         if fire_alert:
             alert_h = 80
             alert_overlay = frame.copy()
-            cv2.rectangle(alert_overlay, (0, h - alert_h), self.ALLERT, -1)
+            cv2.rectangle(alert_overlay, (0, h - alert_h), (w, h), self.ALLERT, -1)
             cv2.addWeighted(alert_overlay, 0.6, frame, 0.4, 0, frame)
 
             # Pulsing effect
@@ -142,3 +142,5 @@ class Render:
                 3,
                 cv2.LINE_AA
             )
+        
+        return frame
