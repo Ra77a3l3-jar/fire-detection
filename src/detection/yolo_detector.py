@@ -1,16 +1,21 @@
 from ultralytics import YOLO
-import numpy 
+import numpy
 from pathlib import Path
+import torch
 
 class Detector:
     def __init__(self, model_path="../../models/best.pt", confidence=0.7) -> None:
         self.confidence_threshold = confidence
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         path = Path(__file__).parent / model_path
 
         if path.exists():
             self.model = YOLO(path)
-            print("Loaded model from path")
+            self.model.to(self.device)
+            print(f"Loaded model from path on device: {self.device}")
+            if self.device == 'cuda':
+                print(f"GPU: {torch.cuda.get_device_name(0)}")
         else:
             print("Model not loaded, not present at path")
             
