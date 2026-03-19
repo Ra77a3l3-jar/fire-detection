@@ -1,14 +1,16 @@
+from cv2.typing import MatLike
 from ultralytics import YOLO
 import numpy
 from pathlib import Path
 import torch
+import config
 
 class Detector:
-    def __init__(self, model_path="../../models/best.pt", confidence=0.7) -> None:
-        self.confidence_threshold = confidence
+    def __init__(self) -> None:
+        self.confidence_threshold = config.YOLO_CONFIDENCE
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        path = Path(__file__).parent / model_path
+        path = Path(__file__).parent / config.YOLO_MODEL_PATH
 
         if path.exists():
             self.model = YOLO(path)
@@ -18,8 +20,8 @@ class Detector:
                 print(f"GPU: {torch.cuda.get_device_name(0)}")
         else:
             print("Model not loaded, not present at path")
-            
-    def detect(self, frame):
+
+    def detect(self, frame: MatLike):
         result = self.model(frame, conf=self.confidence_threshold, verbose=False)[0]
 
         detections = []
@@ -37,5 +39,5 @@ class Detector:
                 "box": (x1, y1, x2, y2),
                 "confidence": float(confidence)
                 })
-        
+
         return detections
