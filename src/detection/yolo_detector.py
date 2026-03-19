@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 import config
 
-class Detector:
+class YOLODetector:
     def __init__(self) -> None:
         self.confidence_threshold = config.YOLO_CONFIDENCE
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
