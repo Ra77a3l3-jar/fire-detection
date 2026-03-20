@@ -19,3 +19,16 @@ class ARUCODetector:
 
         if ids is None:
             return None
+
+        for i, marker_id in enumerate(ids.flatten()):
+            if marker_id == config.ARUCO_ID:
+                points = corners[i][0]
+
+                x_min = int(np.min(points[:, 0]))
+                y_min = int(np.min(points[:, 1]))
+                x_max = int(np.max(points[:, 0]))
+                y_max = int(np.max(points[:, 1]))
+
+                return (x_min, y_min, x_max, y_max)
+
+        return None

@@ -1,57 +1,76 @@
+import cv2
+from torch.autograd import NestedIOFunction
+import config
+
 from capture.adb_capture import ADBCapture
-from detection.yolo_detector import Detector
+from detection.yolo_detector import YOLODetector
+from detection.aruco_detector import ARUCODetector
 from ui.render import Render
 from logic.controller import DetectionController
 from utils.evidence_saver import EvidenceSaver
-import cv2
+from utils.utils import full_inside
 
+cap = cv2.VideoCapture(config.VIDEO_SOURCE)
 
-def resize_for_display(frame, max_width=900):
-    h, w = frame.shape[:2]
-
-    if w <= max_width:
-        return frame
-
-    scale = max_width / w
-    return cv2.resize(frame, None, fx=scale, fy=scale)
-
-
-cap = cv2.VideoCapture("/dev/video10")
-detector = Detector()
+detector = YOLODetector()
+aruco = ARUCODetector()
 renderer = Render()
-controller = DetectionController(confirm_frames=3)
+controller = DetectionController()
 saver = EvidenceSaver()
+
+PHASE = 1
+rover_streak = 0
 
 cv2.namedWindow("Fire Detector", cv2.WINDOW_NORMAL)
 cv2.resizeWindow("Fire Detector", 900, 600)
 
 while True:
-    ret, frame = cap.read()
+
+    ret, frame =cap.read()
     if not ret or frame is None:
         continue
 
-    detections = detector.detect(frame)
-    alert = controller.process(detections)
-    
-    # Draw detections first
-    frame = renderer.draw(frame, detections)
-    
-    # Draw info panel with status
-    frame = renderer.draw_info(
-        frame,
-        controller.fps,
-        controller.total_detections,
-        detector.device,
-        fire_alert=alert
-    )
+    if PHASE == 1:
+        detections = detector.detect(frame)
+        alert = controller.process(detections)
 
-    if alert:
-        print("FIRE CONFIRMED")
-        path = saver.save(frame)
-        print(f"Fire captured and saved -> {path}")
+        # Draw detections first
+        frame = renderer.draw(frame, detections)
 
-    display = resize_for_display(frame)
-    cv2.imshow("Fire Detector", display)
+        # Draw info panel with status
+        frame = renderer.draw_info(
+            frame,
+            controller.fps,
+            controller.total_detections,
+            detector.device,
+            fire_alert=alert
+        )
+
+        if alert:
+            print("FIRE CONFIRMED")
+            PHASE = 2
+
+            if config.SAVE_EVIDENCE:
+                path = saver.save(frame)
+                print(f"Fire Saved -> {path}")
+
+    elif PHASE == 2:
+
+        fire_box = controller.confirmed_fire_box
+        rover_box = aruco.detect(frame)
+
+        if rover_box and fire_box:
+            if full_inside(rover_box, fire_box):
+                rover_streak += 1
+            else:
+                rover_streak = 0
+
+            if rover_streak >= config.ROVER_CONFIRM_FRAMES:
+                print("COMPLETED")
+                break
+
+            x1, y1, x2, y2 = rover_box
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
 
     if cv2.waitKey(1) == 27:
         break
