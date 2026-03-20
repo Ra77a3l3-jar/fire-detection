@@ -56,15 +56,24 @@ while True:
 
     elif PHASE == 2:
 
-        fire_box = controller.confirmed_fire_box
+        fire_detection = detector.detect(frame)
+
+        fire_box = None
+
+        for detec in fire_detection:
+            x1, y1, x2, y2 = detec["box"]
+            area = (x2 - x1) * (y2 - y1)
+
+            if area >= config.MIN_FIRE_AREA:
+                fire_box = detec["box"]
+                break
+
+        # Fire box
+        frame = renderer.draw(frame, fire_detection)
+
         rover_box = aruco.detect(frame)
 
-        if rover_box and fire_box:
-            if full_inside(rover_box, fire_box):
-                rover_streak += 1
-            else:
-                rover_streak = 0
-
+        if fire_box and rover_box:
             if rover_streak >= config.ROVER_CONFIRM_FRAMES:
                 print("COMPLETED")
                 break
