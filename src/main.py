@@ -1,14 +1,12 @@
 import cv2
-from torch.autograd import NestedIOFunction
 import config
 
-from capture.adb_capture import ADBCapture
 from detection.yolo_detector import YOLODetector
 from detection.aruco_detector import ARUCODetector
 from ui.render import Render
 from logic.controller import DetectionController
 from utils.evidence_saver import EvidenceSaver
-from utils.utils import full_inside
+from utils.utils import full_inside, iou
 
 cap = cv2.VideoCapture(config.VIDEO_SOURCE)
 
@@ -74,6 +72,14 @@ while True:
         rover_box = aruco.detect(frame)
 
         if fire_box and rover_box:
+            inside = full_inside(rover_box, fire_box)
+            overlap = iou(rover_box, fire_box)
+
+            if inside or overlap > config.MIN_OVERLAP_AREA  :
+                rover_streak += 1
+            else:
+                rover_streak = 0
+
             if rover_streak >= config.ROVER_CONFIRM_FRAMES:
                 print("COMPLETED")
                 break
