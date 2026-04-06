@@ -30,7 +30,19 @@ while True:
 
     if PHASE == 1:
         detections = detector.detect(frame)
+
+        # Debug detection count
+        print(f"[Phase 1] Detections: {len(detections)}", end="")
+
         alert = controller.process(detections)
+
+        # Debug streak progress
+        print(f" | Streak: {controller.streak}/{controller.confirm_frames}", end="")
+
+        if alert:
+            print(" | Yes FIRE CONFIRMED!")
+        else:
+            print()
 
         # Draw detections first
         frame = renderer.draw(frame, detections)
@@ -45,7 +57,9 @@ while True:
         )
 
         if alert:
-            print("FIRE CONFIRMED")
+            print("\n" + "="*60)
+            print("TRANSITIONING TO PHASE 2")
+            print("="*60 + "\n")
             PHASE = 2
 
             if config.SAVE_EVIDENCE:
@@ -66,28 +80,58 @@ while True:
                 fire_box = detec["box"]
                 break
 
-        # Fire box
+        # Draw fire box first
         frame = renderer.draw(frame, fire_detection)
 
         rover_box = aruco.detect(frame)
+
+        # Debug rover detection status
+        print(f"[Phase 2] Fire Box: {'Yes' if fire_box else 'No'} | Rover Detected: {'Yes' if rover_box else 'No'}", end="")
 
         if fire_box and rover_box:
             inside = full_inside(rover_box, fire_box)
             overlap = iou(rover_box, fire_box)
 
-            if inside or overlap > config.MIN_OVERLAP_AREA  :
+            # Debug containment metrics
+            print(f" | Inside: {inside} | IoU: {overlap:.3f}", end="")
+
+            if inside or overlap > config.MIN_OVERLAP_AREA:
                 rover_streak += 1
+                print(f" | Streak: {rover_streak}/{config.ROVER_CONFIRM_FRAMES} ✓ CONTAINED", end="")
+                # Draw rover box
+                frame = renderer.draw_rover(frame, rover_box, status="contained")
             else:
                 rover_streak = 0
+                print(f" | Streak: {rover_streak}/{config.ROVER_CONFIRM_FRAMES} ✗ NOT CONTAINED", end="")
+                # Draw rover box
+                frame = renderer.draw_rover(frame, rover_box, status="not_contained")
 
             if rover_streak >= config.ROVER_CONFIRM_FRAMES:
-                print("COMPLETED")
+                print("\n\n" + "="*60)
+                print("ROVER CONTAINMENT CONFIRMED")
+                print("="*60 + "\n")
+
+                if config.SAVE_EVIDENCE:
+                    path = saver.save(frame)
+                    print(f"Final Evidence Saved -> {path}")
                 break
+        elif rover_box:
+            # Rover detected but no fire box
+            print(f" | Status: Waiting for fire box", end="")
+            frame = renderer.draw_rover(frame, rover_box, status="detected")
+        else:
+            # Reset streak if no rover detected
+            if rover_streak > 0:
+                print(f" | Streak RESET (was {rover_streak})", end="")
+                rover_streak = 0
 
-            x1, y1, x2, y2 = rover_box
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
 
-    if cv2.waitKey(1) == 27:
+    # Display the frame
+    cv2.imshow("Fire Detector", frame)
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == 27 or key == ord('q'):
         break
 
+cap.release()
 cv2.destroyAllWindows()

@@ -10,7 +10,7 @@ class Render:
         self.WHITE = (255, 255, 255)
         self.GREEN = (0, 255, 0)
         self.ORANGE = (0, 165, 255)
-    
+
     def draw(self, frame, detections):
 
         output = frame.copy()
@@ -31,14 +31,14 @@ class Render:
             # Fire lable with background
             lable = f"FIRE {confidence*100:.1f}%"
             (lable_w, lable_h), baseline = cv2.getTextSize(
-                lable, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2
+                lable, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 3
             )
 
             # Fire lable box
             cv2.rectangle(
                 output,
-                (x1, y1 - lable_h - baseline - 10),
-                (x1 + lable_w + 10, y1),
+                (x1, y1 - lable_h - baseline - 15),
+                (x1 + lable_w + 15, y1),
                 self.FIRE,
                 -1
             )
@@ -47,13 +47,66 @@ class Render:
             cv2.putText(
                 output,
                 lable,
-                (x1 + 5, y1 - 10),
+                (x1 + 7, y1 - 12),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
+                1.0,
                 self.WHITE,
-                2,
+                3,
                 cv2.LINE_AA
             )
+
+        return output
+
+    def draw_rover(self, frame, rover_box, status="detected"):
+        output = frame.copy()
+        x1, y1, x2, y2 = rover_box
+
+        if status == "contained":
+            box_color = self.GREEN
+            label_bg_color = self.GREEN
+            label_text = "ROVER - CONTAINED"
+        elif status == "not_contained":
+            box_color = self.ALLERT
+            label_bg_color = self.ALLERT
+            label_text = "ROVER - NOT CONTAINED"
+        else:  # waiting for fire box
+            box_color = (0, 255, 255)
+            label_bg_color = (0, 180, 180)
+            label_text = "ROVER - DETECTED"
+
+        overlay = output.copy()
+        cv2.rectangle(overlay, (x1, y1), (x2, y2), box_color, -1)
+        cv2.addWeighted(overlay, 0.15, output, 0.85, 0, output)
+
+        cv2.rectangle(output, (x1, y1), (x2, y2), box_color, 3)
+
+        accent_color = tuple(int(c * 0.7) for c in box_color)  # Darker shade
+        cv2.rectangle(output, (x1-2, y1-2), (x2+2, y2+2), accent_color, 1)
+
+        (label_w, label_h), baseline = cv2.getTextSize(
+            label_text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 3
+        )
+
+        # Label box
+        cv2.rectangle(
+            output,
+            (x1, y1 - label_h - baseline - 15),
+            (x1 + label_w + 15, y1),
+            label_bg_color,
+            -1
+        )
+
+        # Label text
+        cv2.putText(
+            output,
+            label_text,
+            (x1 + 7, y1 - 12),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.0,
+            self.WHITE,
+            3,
+            cv2.LINE_AA
+        )
 
         return output
 
@@ -142,5 +195,5 @@ class Render:
                 3,
                 cv2.LINE_AA
             )
-        
+
         return frame

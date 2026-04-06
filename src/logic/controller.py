@@ -40,18 +40,22 @@ class DetectionController:
 
             if area >= self.min_fire_area:
                 valid_fire = detec["box"]
+                print(f" | Fire area: {area:.0f}", end="")
                 break
 
-        if valid_fire is not None:
+        if valid_fire is None:
             self.streak = 0
             self.last_fire_box = None
             return False
 
-        # Stablity check
+        # Stability check
         if self.last_fire_box is not None:
             shift = self._box_shift(valid_fire, self.last_fire_box)
 
+            print(f" | Shift: {shift:.1f}", end="")
+
             if shift >= self.max_fire_shift:
+                print(f" (>{self.max_fire_shift})", end="")
                 self.streak = 0
                 self.last_fire_box = valid_fire
                 return False
